@@ -5,7 +5,6 @@ from flask import Response, request
 from flask import Flask, render_template
 
 
-##1:09:00 : tuto 
 load_dotenv(dotenv_path="secrets")
 
 openai.api.key = os.getenv("OPENAI_API_KEY")
@@ -22,6 +21,11 @@ def prompt():
     conversation = build_conversation_dict(messages=messages)
     return Response(event_stream(conversation), mimetype='text/event-stream')
 
+def build_conversation_dict(messages: list) -> list[dict]:
+    return [
+        {"role": "user" if i % 2 == 0 else "assistant", "content": message}
+        for i, message in enumerate(messages)
+    ]
 
 def event_stream(conversation: list[dict]) -> str:
     response = openai.ChatCompletion.create(
@@ -35,11 +39,9 @@ def event_stream(conversation: list[dict]) -> str:
         if len(text):
             yield text
 
-def build_conversation_dict(messages: list) -> list[dict]:
-    return [
-        {"role": "user" if i % 2 == 0 else "assistant", "content": message}
-        for i, message in enumerate(messages)
-    ]
 
 if __name__ == '__main__':
     app.run(debug=True, host='127.0.0.1', port=5000)
+    conv = build_conversation_dict(message=["Bonjour, comment ça va?","ca va et toi"])
+    for line in event_stream(conv):
+        print(line)
